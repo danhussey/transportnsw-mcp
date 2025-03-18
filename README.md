@@ -67,11 +67,26 @@ train_alerts = get_transport_alerts(mot_type=1)
 
 ## Testing
 
-Run tests with pytest:
+### Local Testing
+
+Run tests locally with pytest:
 
 ```bash
 uv run pytest test_api.py -v
 ```
+
+### Continuous Integration
+
+Tests automatically run on GitHub Actions for every push and pull request to the main branch. The workflow:
+
+1. Sets up Python 3.10
+2. Installs uv and project dependencies
+3. Runs tests with coverage reporting
+
+To use this feature:
+
+1. Add your `OPEN_TRANSPORT_API_KEY` as a GitHub repository secret
+2. Push your code to GitHub
 
 ## MCP Integration
 
