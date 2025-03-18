@@ -115,6 +115,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/ac/60f409a448e5b0e9b8539716f683568aa5848c1be903cdbbc805a552cdf8/coverage-7.7.0-py3-none-any.whl", hash = "sha256:708f0a1105ef2b11c79ed54ed31f17e6325ac936501fc373f24be3e6a578146a", size = 202803 },
 ]
 
+[package.optional-dependencies]
+toml = [
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
+]
+
 [[package]]
 name = "dotenv"
 version = "0.9.9"
@@ -421,6 +426,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-cov"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "coverage", extra = ["toml"] },
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/45/9b538de8cef30e17c7b45ef42f538a94889ed6a16f2387a6c89e73220651/pytest-cov-6.0.0.tar.gz", hash = "sha256:fde0b595ca248bb8e2d76f020b465f3b107c9632e6a1d1705f17834c89dcadc0", size = 66945 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/36/3b/48e79f2cd6a61dbbd4807b4ed46cb564b4fd50a76166b1c4ea5c1d9e2371/pytest_cov-6.0.0-py3-none-any.whl", hash = "sha256:eee6f1b9e61008bd34975a4d5bab25801eb31898b032dd55addc93e96fcaaa35", size = 22949 },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -577,6 +595,7 @@ dependencies = [
     { name = "pluggy" },
     { name = "py" },
     { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "python-dateutil" },
     { name = "randomize" },
     { name = "setuptools" },
@@ -594,6 +613,7 @@ requires-dist = [
     { name = "pluggy", specifier = ">=0.3.1" },
     { name = "py", specifier = ">=1.4.31" },
     { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "python-dateutil", specifier = ">=2.5.3" },
     { name = "randomize", specifier = ">=0.13" },
     { name = "setuptools", specifier = ">=21.0.0" },
