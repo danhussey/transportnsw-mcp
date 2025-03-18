@@ -22,7 +22,14 @@ output_format = 'rapidJSON'  # Required for JSON output
 coord_output_format = 'EPSG:4326'  # Standard coordinate format
 incl_filter = 1  # Enable advanced filter mode
 
+# server.py
+from mcp.server.fastmcp import FastMCP
 
+# Create an MCP server
+mcp = FastMCP("Transport NSW")
+
+# Add an addition tool
+@mcp.tool()
 def find_transport_stops(location_coord, stop_type='BUS_POINT', radius=1000):
     """
     Find transport stops around a specific location.
