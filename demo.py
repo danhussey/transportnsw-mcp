@@ -1,76 +1,13 @@
 from __future__ import print_function
-import swagger_client
-from swagger_client.rest import ApiException
 from pprint import pprint
-from dotenv import load_dotenv
 import os
 from datetime import datetime
+import argparse
+import time
+import json
 
-def get_transport_alerts(date=None, mot_type=None, stop_id=None, line_number=None, operator_id=None):
-    """
-    Get transport alerts from the Transport NSW API.
-    
-    Args:
-        date (str, optional): Date in DD-MM-YYYY format. Defaults to today's date.
-        mot_type (int, optional): Mode of transport type filter. Options:
-            1: Train
-            2: Metro
-            4: Light Rail
-            5: Bus
-            7: Coach
-            9: Ferry
-            11: School Bus
-        stop_id (str, optional): Stop ID or global stop ID to filter by.
-        line_number (str, optional): Line number to filter by (e.g., '020T1').
-        operator_id (str, optional): Operator ID to filter by.
-    
-    Returns:
-        dict: API response containing alerts information
-    """
-    # Load environment variables
-    load_dotenv()
-    
-    # Configure API key authorization
-    configuration = swagger_client.Configuration()
-    configuration.api_key['Authorization'] = os.getenv('OPEN_TRANSPORT_API_KEY')
-    configuration.api_key_prefix['Authorization'] = 'apikey'
-    
-    # Create API instance
-    api_instance = swagger_client.DefaultApi(swagger_client.ApiClient(configuration))
-    
-    # Set default date to today if not provided
-    if date is None:
-        date = datetime.now().strftime('%d-%m-%Y')
-    
-    # Required parameter
-    output_format = 'rapidJSON'
-    
-    # Optional parameters
-    kwargs = {
-        'filter_date_valid': date,
-        'version': '10.2.1.42'
-    }
-    
-    # Add optional filters if provided
-    if mot_type is not None:
-        kwargs['filter_mot_type'] = mot_type
-    
-    if stop_id is not None:
-        kwargs['itd_l_pxx_sel_stop'] = stop_id
-    
-    if line_number is not None:
-        kwargs['itd_l_pxx_sel_line'] = line_number
-    
-    if operator_id is not None:
-        kwargs['itd_l_pxx_sel_operator'] = operator_id
-    
-    try:
-        # Call the API
-        api_response = api_instance.tfnsw_addinfo_request(output_format, **kwargs)
-        return api_response
-    except ApiException as e:
-        print(f"Exception when calling Transport NSW API: {e}\n")
-        return None
+# Import from centralized API module
+from api import get_transport_alerts
 
 
 def print_alerts(alerts):
