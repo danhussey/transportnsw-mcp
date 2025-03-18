@@ -12,12 +12,17 @@ This project implements a Model Context Protocol (MCP) service for parts of Tran
 2. Install dependencies using uv (fast Python package manager):
    ```bash
    uv venv
-   uv pip install -r requirements.txt
+   uv sync
    ```
 3. Create a `.env` file with your API key:
    ```
    OPEN_TRANSPORT_API_KEY=your_api_key_here
    ```
+4. (Optional) Run the MCP Inspector:
+   ```bash
+   uv run mcp dev api.py
+   ```
+And visit the server at http://localhost:5173 (port might be different).
 
 ## Features
 
@@ -94,4 +99,8 @@ This project follows the Model Context Protocol specification, allowing AI model
 
 ## Package Management
 
-This project uses uv.
+This project uses uv, a modern Python package manager written in Rust. Dependencies are managed through:
+
+- `pyproject.toml`: Defines project dependencies
+- `uv.lock`: Locks dependency versions for reproducible environments
+- Local dependencies (like swagger-client) are referenced in the [tool.uv.sources] section
