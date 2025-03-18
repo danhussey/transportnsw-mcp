@@ -99,3 +99,78 @@ curl -X GET "https://api.transport.nsw.gov.au/v1/tp/coord?outputFormat=rapidJSON
   -H "Accept: application/json"
 '''
 print(curl_command)
+
+
+def test_coordinate_api():
+    """
+    Test function to verify coordinate API responses and diagnose issues.
+    This helps understand why certain parameters may not work as expected.
+    """
+    import time
+    
+    print("\n=== Transport NSW Coordinate API Test ===\n")
+    
+    # Test 1: Bus stops (known to work)
+    print("Test 1: Find bus stops around Central Station")
+    try:
+        start_time = time.time()
+        bus_stops = find_transport_stops(coord, stop_type='BUS_POINT', radius=500)
+        elapsed = time.time() - start_time
+        print(f"  Status: {'✓ Success' if bus_stops else '✗ Failed'}")
+        print(f"  Response time: {elapsed:.2f} seconds")
+        print(f"  Found locations: {len(bus_stops.locations) if hasattr(bus_stops, 'locations') else 0}")
+        if hasattr(bus_stops, 'locations') and bus_stops.locations:
+            # Check the type values in the response
+            types = set(getattr(loc, 'type', 'unknown') for loc in bus_stops.locations[:10])
+            print(f"  Location types in response: {types}")
+    except Exception as e:
+        print(f"  Error: {str(e)}")
+    
+    # Test 2: POI points (known to work)
+    print("\nTest 2: Find POIs around Central Station")
+    try:
+        start_time = time.time()
+        poi_locations = find_transport_stops(coord, stop_type='POI_POINT', radius=500)
+        elapsed = time.time() - start_time
+        print(f"  Status: {'✓ Success' if poi_locations else '✗ Failed'}")
+        print(f"  Response time: {elapsed:.2f} seconds")
+        print(f"  Found locations: {len(poi_locations.locations) if hasattr(poi_locations, 'locations') else 0}")
+        if hasattr(poi_locations, 'locations') and poi_locations.locations:
+            # Check the type values in the response
+            types = set(getattr(loc, 'type', 'unknown') for loc in poi_locations.locations[:10])
+            print(f"  Location types in response: {types}")
+    except Exception as e:
+        print(f"  Error: {str(e)}")
+    
+    # Test 3: GIS_POINT (known to fail)
+    print("\nTest 3: GIS_POINT test (expected to fail)")
+    try:
+        start_time = time.time()
+        gis_locations = api_instance.tfnsw_coord_request(
+            output_format=output_format,
+            coord=coord,
+            coord_output_format=coord_output_format,
+            incl_filter=incl_filter,
+            type_1='GIS_POINT',
+            radius_1=500,
+            version='10.2.1.42'
+        )
+        elapsed = time.time() - start_time
+        print(f"  Status: Unexpected success")
+        print(f"  Response time: {elapsed:.2f} seconds")
+    except Exception as e:
+        print(f"  Status: ✓ Expected error")
+        print(f"  Error type: {type(e).__name__}")
+        print(f"  Error message: {str(e)}")
+        print("\n  Explanation: The GIS_POINT parameter causes the API to return locations with type='gis',")
+        print("  but the API client expects types to be one of: ['poi', 'singlehouse', 'stop', 'platform',")
+        print("  'street', 'locality', 'suburb', 'gisPoint', 'unknown']. This causes a validation error.")
+    
+    print("\n=== Test Complete ===\n")
+
+
+# Run the test if called with --test argument
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--test":
+        test_coordinate_api()

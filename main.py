@@ -33,8 +33,16 @@ try:
     # api_response = api_instance.tfnsw_addinfo_request(output_format, filter_date_valid=filter_date_valid, filter_mot_type=filter_mot_type, filter_publication_status=filter_publication_status, itd_l_pxx_sel_stop=itd_l_pxx_sel_stop, itd_l_pxx_sel_line=itd_l_pxx_sel_line, itd_l_pxx_sel_operator=itd_l_pxx_sel_operator, filter_pn_line_dir=filter_pn_line_dir, filter_pn_line_sub=filter_pn_line_sub, version=version)
     
     # Example api response with only date filter
-    api_response = api_instance.tfnsw_addinfo_request(output_format, filter_date_valid=filter_date_valid)
+    # api_response = api_instance.tfnsw_addinfo_request(output_format, filter_date_valid=filter_date_valid)
 
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling DefaultApi->tfnsw_addinfo_request: %s\n" % e)
+
+# Demo function that gets all alerts for a specific date
+def demo(date: str):
+    api_response = api_instance.tfnsw_addinfo_request(output_format, filter_date_valid=date)
+    return api_response
+
+
+print(demo('18-03-2025'))
