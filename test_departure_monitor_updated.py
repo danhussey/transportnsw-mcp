@@ -2,7 +2,7 @@ from api import get_departure_monitor
 import pprint
 from datetime import datetime, timedelta
 
-def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
+def _test_stop_id(stop_id, description="", future_time=False, mot_type=None):
     """Test a specific stop ID and print the results."""
     print(f"\n{'='*80}")
     print(f"Testing stop ID: {stop_id}" + (f" ({description})" if description else ""))
@@ -84,20 +84,70 @@ def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
     else:
         print("No result returned from the API.")
 
-# Test with various stop IDs
-# Try with the stop IDs from the documentation
-test_stop_id("10101331", "Domestic Airport Station (from documentation)")
+def _verify_departures(response):
+    if 'stopEvents' in response and response['stopEvents']:
+        print(f"\nFound {len(response['stopEvents'])} departures:")
+        for i, event in enumerate(response['stopEvents'][:5]):  # Show first 5 events
+            print(f"\nDeparture {i+1}:")
+            
+            # Display transportation info
+            if 'transportation' in event:
+                trans = event['transportation']
+                if 'number' in trans:
+                    print(f"  Line: {trans['number']}")
+                if 'disassembledName' in trans:
+                    print(f"  Name: {trans['disassembledName']}")
+                elif 'name' in trans:
+                    print(f"  Name: {trans['name']}")
+                if 'destination' in trans and 'name' in trans['destination']:
+                    print(f"  Destination: {trans['destination']['name']}")
+            
+            # Display time info
+            if 'departureTimePlanned' in event:
+                print(f"  Planned Departure: {event['departureTimePlanned']}")
+            if 'departureTimeEstimated' in event:
+                print(f"  Estimated Departure: {event['departureTimeEstimated']}")
+            
+            # Display location info
+            if 'location' in event:
+                loc = event['location']
+                if 'name' in loc:
+                    print(f"  Location: {loc['name']}")
+                if 'disassembledName' in loc:
+                    print(f"  Platform/Stop: {loc['disassembledName']}")
+    else:
+        print("\nNo departure events found.")
 
-# Try with the stop IDs we found earlier
-test_stop_id("200060", "Central Station global ID")
+import pytest
 
-# Try with a specific transport mode (1 = Train)
-test_stop_id("200060", "Central Station (Trains only)", mot_type=1)
+# Parameterized tests
+@pytest.mark.parametrize('stop_id', [
+    '209937',  # Central Station
+    '209939',  # Town Hall Station
+    '209940',  # Wynyard Station
+])
+def test_basic_stop_ids(stop_id):
+    result = get_departure_monitor(stop_id)
+    assert result is not None
+    _verify_departures(result)
 
-# Try with other stations
-test_stop_id("200070", "Town Hall Station")
-test_stop_id("200080", "Wynyard Station")
-test_stop_id("200010", "Circular Quay Station")
+@pytest.mark.parametrize('stop_id, mot_type', [
+    ('200060', 1),  # Trains only
+    ('200070', 4),  # Buses only
+    ('200080', 5),  # Ferries only
+])
+def test_transport_modes(stop_id, mot_type):
+    result = get_departure_monitor(stop_id, mot_type=mot_type)
+    assert result is not None
+    _verify_departures(result)
 
-# Try with a future time to see if we get more results
-test_stop_id("200060", "Central Station with future time", future_time=True)
+@pytest.mark.parametrize('stop_id, description, future_time, mot_type', [
+    ('10101331', "Domestic Airport Station (from documentation)", False, None),
+    ('200060', "Central Station (Trains only)", False, 1),
+    ('200070', "Town Hall Station", False, None),
+    ('200080', "Wynyard Station", False, None),
+    ('200010', "Circular Quay Station", False, None),
+    ('200060', "Central Station with future time", True, None),
+])
+def test_stop_ids_with_params(stop_id, description, future_time, mot_type):
+    _test_stop_id(stop_id, description, future_time, mot_type)

@@ -30,7 +30,7 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Transport NSW")
 
 @mcp.tool()
-def find_transport_stops(location_coord, stop_type='BUS_POINT', radius=1000):
+def find_transport_stops(location_coord, stop_type='BUS_POINT', radius=100):
     """
     Find transport stops around a specific location.
     
@@ -222,7 +222,8 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
         'itdDate': itd_date,
         'itdTime': itd_time,
         'TfNSWDM': 'true',
-        'version': api_version
+        'version': api_version,
+        'radius_dm': 100
     }
     
     # Add mot_type filter if provided
@@ -248,7 +249,11 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
                 data['stopEvents'] = data['stopEvents'][:max_results]
                 print(f"Limited results to {max_results} departures")
             
-            return data
+            # Process response
+            stops = data.get('stopEvents', [])
+            # Sort stops by distance
+            stops.sort(key=lambda x: x.get('distance', float('inf')))
+            return stops
         else:
             print(f"Request failed with status code: {response.status_code}")
             print(f"Response text: {response.text[:500]}...")  # Print first 500 chars
@@ -256,4 +261,3 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
     except Exception as e:
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
-
