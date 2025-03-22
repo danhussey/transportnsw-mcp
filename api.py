@@ -186,9 +186,10 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
         max_results (int, optional): Maximum number of results to return. Default is 1.
         
     Returns:
-        dict: API response containing departure information
+        list: Simplified list of departure information
     """
     import requests
+    from datetime import datetime, timezone, timedelta
     
     # API endpoint
     API_ENDPOINT = 'https://api.transport.nsw.gov.au/v1/tp/departure_mon'
@@ -211,6 +212,19 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
         # Convert from HH:MM to HHMM
         itd_time = time.replace(':', '')
     
+    # Parse the target time for later filtering
+    target_time = None
+    if time is not None:
+        time_parts = time.split(':')
+        hour = int(time_parts[0])
+        minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+        # Create a datetime object with today's date and the specified time
+        # Make it timezone-aware to match the converted API times
+        target_time = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # Add timezone info to make it comparable with timezone-aware datetimes
+        target_time = target_time.astimezone()
+    
+    # Always request more results than needed to ensure we have enough for filtering
     # Set up the request parameters exactly as in the documentation
     params = {
         'outputFormat': 'rapidJSON',
@@ -223,7 +237,8 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
         'itdTime': itd_time,
         'TfNSWDM': 'true',
         'version': api_version,
-        'radius_dm': 100
+        'radius_dm': 100,
+        'limit': max(20, max_results * 2)  # Request more results than needed for better filtering
     }
     
     # Add mot_type filter if provided
@@ -251,12 +266,72 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
             
             # Process response
             stops = data.get('stopEvents', [])
-            # Sort stops by distance
-            stops.sort(key=lambda x: x.get('distance', float('inf')))
+            
+            # Process stops and prepare for filtering/sorting
+            processed_stops = []
+            
+            # Get current date and time for filtering
+            now_local = datetime.now()
+            today_date = now_local.strftime('%Y-%m-%d')
+            
+            # Convert all departure times to datetime objects for easier processing
+            for stop in stops:
+                departure_time = stop.get('departureTimePlanned', '')
+                if not departure_time:  # Skip entries without departure time
+                    continue
+                    
+                # Parse the departure time (API returns times in UTC with Z suffix)
+                try:
+                    # Remove any fractional seconds and handle Z suffix
+                    clean_time = departure_time.split('.')[0]
+                    if clean_time.endswith('Z'):
+                        clean_time = clean_time[:-1]  # Remove Z suffix
+                    
+                    # Parse the UTC time from the API
+                    departure_dt_utc = datetime.strptime(clean_time, "%Y-%m-%dT%H:%M:%S")
+                    departure_dt_utc = departure_dt_utc.replace(tzinfo=timezone.utc)
+                    
+                    # Convert to local time for easier comparison
+                    departure_dt_local = departure_dt_utc.astimezone()
+                    
+                    # Add the parsed datetime to the stop for easier sorting
+                    stop['departure_dt_local'] = departure_dt_local
+                    
+                    # Only include departures from today or future dates
+                    departure_date = departure_dt_local.strftime('%Y-%m-%d')
+                    if departure_date >= today_date:
+                        processed_stops.append(stop)
+                except ValueError:
+                    print(f"Could not parse departure time: {departure_time}")
+                    continue
+            
+            # Sort the stops based on time parameter if provided
+            if target_time is not None:
+                # Calculate time difference for each stop
+                for stop in processed_stops:
+                    departure_dt_local = stop['departure_dt_local']
+                    
+                    # Calculate time difference in seconds
+                    time_diff = abs((departure_dt_local - target_time).total_seconds())
+                    stop['time_diff'] = time_diff
+                
+                # Sort by time difference (closest to target time first)
+                processed_stops.sort(key=lambda x: x.get('time_diff', float('inf')))
+            else:
+                # Sort by departure time if no specific time is provided (earliest first)
+                processed_stops.sort(key=lambda x: x['departure_dt_local'])
+            
+            # Limit to max_results
+            if max_results > 0 and len(processed_stops) > max_results:
+                processed_stops = processed_stops[:max_results]
+                print(f"Limited results to {max_results} departures")
             
             # Create a more concise version of the data for LLMs
             concise_stops = []
-            for stop in stops:
+            for stop in processed_stops:
+                # Format local time for better readability
+                local_time = stop['departure_dt_local'].strftime('%Y-%m-%d %H:%M:%S')
+                
                 # Extract only the essential information
                 concise_stop = {
                     'stop_name': stop.get('location', {}).get('name', ''),
@@ -266,6 +341,7 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
                     'operator': stop.get('transportation', {}).get('operator', {}).get('name', ''),
                     'planned_departure': stop.get('departureTimePlanned', ''),
                     'estimated_departure': stop.get('departureTimeEstimated', ''),
+                    'local_departure_time': local_time,
                     'wheelchair_access': stop.get('properties', {}).get('WheelchairAccess', 'false')
                 }
                 concise_stops.append(concise_stop)
