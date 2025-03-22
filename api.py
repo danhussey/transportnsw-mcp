@@ -166,7 +166,7 @@ def get_transport_alerts(date=None, mot_type=None, stop_id=None, line_number=Non
 
 # Call the API to get real-time departure information for a specific stop
 @mcp.tool()
-def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_results=3):
+def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_results=1):
     """
     Get real-time departure monitor information for a specific stop from the Trip Planner API.
     This function uses direct HTTP requests to the Transport NSW API.
@@ -183,7 +183,7 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
             7: Coach
             9: Ferry
             11: School Bus
-        max_results (int, optional): Maximum number of results to return. Default is 3.
+        max_results (int, optional): Maximum number of results to return. Default is 1.
         
     Returns:
         dict: API response containing departure information
@@ -253,7 +253,24 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
             stops = data.get('stopEvents', [])
             # Sort stops by distance
             stops.sort(key=lambda x: x.get('distance', float('inf')))
-            return stops
+            
+            # Create a more concise version of the data for LLMs
+            concise_stops = []
+            for stop in stops:
+                # Extract only the essential information
+                concise_stop = {
+                    'stop_name': stop.get('location', {}).get('name', ''),
+                    'route_number': stop.get('transportation', {}).get('number', ''),
+                    'route_name': stop.get('transportation', {}).get('description', ''),
+                    'destination': stop.get('transportation', {}).get('destination', {}).get('name', ''),
+                    'operator': stop.get('transportation', {}).get('operator', {}).get('name', ''),
+                    'planned_departure': stop.get('departureTimePlanned', ''),
+                    'estimated_departure': stop.get('departureTimeEstimated', ''),
+                    'wheelchair_access': stop.get('properties', {}).get('WheelchairAccess', 'false')
+                }
+                concise_stops.append(concise_stop)
+            
+            return concise_stops
         else:
             print(f"Request failed with status code: {response.status_code}")
             print(f"Response text: {response.text[:500]}...")  # Print first 500 chars
