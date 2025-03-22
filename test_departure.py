@@ -1,45 +1,42 @@
-from api import get_next_departure
+from api import get_departure_monitor
 import json
+import pprint
 
 # Test with the provided stop ID
 stop_id = "10111101-0-X1"
-result = get_next_departure(stop_id)
+result = get_departure_monitor(stop_id)
 
 # Print the result in a readable format
 if result:
-    print(f"API Version: {result.version}")
-    print(f"Timestamp: {result.timestamp}")
+    print(f"\nFound {len(result)} departures:")
     
-    if hasattr(result, 'infos') and result.infos:
-        # Handle the infos object which might not be a standard list
-        if hasattr(result.infos, 'affected'):
-            print("\nAffected information:")
-            affected = result.infos.affected
-            if affected:
-                for i, item in enumerate(affected):
-                    print(f"\nAffected Item {i+1}:")
-                    for attr in dir(item):
-                        if not attr.startswith('_') and attr not in ['to_dict', 'swagger_types', 'attribute_map']:
-                            value = getattr(item, attr)
-                            if value is not None:
-                                print(f"  {attr}: {value}")
+    # Display the first few departures with details
+    for i, departure in enumerate(result[:5]):  # Show first 5 departures
+        print(f"\nDeparture {i+1}:")
         
-        # Try to access any other attributes of infos
-        print("\nInfos attributes:")
-        for attr in dir(result.infos):
-            if not attr.startswith('_') and attr not in ['to_dict', 'swagger_types', 'attribute_map', 'affected']:
-                value = getattr(result.infos, attr)
-                if value is not None:
-                    print(f"  {attr}: {value}")
-    else:
-        print("\nNo information items found.")
+        # Print key departure information
+        if 'stop_name' in departure:
+            print(f"  Stop: {departure['stop_name']}")
+        if 'route_number' in departure:
+            print(f"  Route: {departure['route_number']}")
+        if 'route_name' in departure:
+            print(f"  Name: {departure['route_name']}")
+        if 'destination' in departure:
+            print(f"  Destination: {departure['destination']}")
+        if 'operator' in departure:
+            print(f"  Operator: {departure['operator']}")
+        if 'local_departure_time' in departure:
+            print(f"  Local Departure Time: {departure['local_departure_time']}")
+        if 'planned_departure' in departure:
+            print(f"  Planned Departure: {departure['planned_departure']}")
+        if 'estimated_departure' in departure:
+            print(f"  Estimated Departure: {departure['estimated_departure']}")
+        if 'wheelchair_access' in departure:
+            print(f"  Wheelchair Access: {departure['wheelchair_access']}")
     
-    # Print all top-level attributes of the result object
-    print("\nAll available top-level attributes:")
-    for attr in dir(result):
-        if not attr.startswith('_') and attr not in ['to_dict', 'swagger_types', 'attribute_map', 'infos', 'version', 'timestamp']:
-            value = getattr(result, attr)
-            if value is not None:
-                print(f"  {attr}: {value}")
+    # Print full response for debugging
+    print("\nFull response:")
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(result)
 else:
     print("No result returned from the API.")

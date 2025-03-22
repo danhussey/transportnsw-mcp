@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 import swagger_client
 from swagger_client.rest import ApiException
-from api import find_transport_stops, get_transport_alerts, get_next_departure, api_instance, output_format, coord_output_format, incl_filter, api_version
+from api import find_transport_stops, get_transport_alerts, get_departure_monitor, api_instance, output_format, coord_output_format, incl_filter, api_version
 
 # Test coordinates (Central Station, Sydney)
 CENTRAL_STATION_COORD = '151.206290:-33.884080:EPSG:4326'
@@ -159,68 +159,73 @@ class TestTransportAlerts:
         assert elapsed < 5, f"API response took too long: {elapsed:.2f} seconds"
 
 
-class TestNextDeparture:
-    """Test suite for Transport NSW Next Departure API functionality."""
+class TestDepartureMonitor:
+    """Test suite for Transport NSW Departure Monitor API functionality."""
     
     # Test stop ID for Central Station
     CENTRAL_STATION_ID = "200060"  # Central Station global ID
     
     def test_basic_departure_retrieval(self):
-        """Test basic next departure retrieval with default parameters."""
-        departures = get_next_departure(self.CENTRAL_STATION_ID)
+        """Test basic departure monitor retrieval with default parameters."""
+        departures = get_departure_monitor(self.CENTRAL_STATION_ID)
         
         # Verify response structure
         assert departures is not None
-        assert hasattr(departures, 'version')
-        assert departures.version == api_version
-        # The API returns additional info response, not departure monitor response
-        assert hasattr(departures, 'infos')
-    
-    # Direction filter test removed as the API doesn't support direction filtering directly
+        assert isinstance(departures, list), "Response should be a list of departures"
+        
+        # Check departure structure if any are returned
+        if len(departures) > 0:
+            # Verify the structure of a departure object
+            departure = departures[0]
+            assert isinstance(departure, dict), "Each departure should be a dictionary"
+            assert 'stop_name' in departure, "Departure should have a stop_name"
+            assert 'local_departure_time' in departure, "Departure should have a local_departure_time"
     
     def test_mot_type_filter(self):
         """Test departure retrieval with mode of transport filter."""
         # Test for train departures (mot_type=1)
-        train_departures = get_next_departure(self.CENTRAL_STATION_ID, mot_type=1)
+        train_departures = get_departure_monitor(self.CENTRAL_STATION_ID, mot_type=1)
         assert train_departures is not None
-        
-        # Verify response structure
-        assert hasattr(train_departures, 'version')
-        assert train_departures.version == api_version
+        assert isinstance(train_departures, list), "Response should be a list of departures"
     
     def test_date_parameter(self):
         """Test departure retrieval with specific date."""
         # Test for departures on a specific date
         tomorrow = (datetime.now().date().replace(day=datetime.now().day + 1)).strftime('%d-%m-%Y')
-        date_departures = get_next_departure(self.CENTRAL_STATION_ID, date=tomorrow)
+        date_departures = get_departure_monitor(self.CENTRAL_STATION_ID, date=tomorrow)
         assert date_departures is not None
-        
-        # Check that the response has the expected structure
-        assert hasattr(date_departures, 'version')
+        assert isinstance(date_departures, list), "Response should be a list of departures"
+    
+    def test_time_parameter(self):
+        """Test departure retrieval with specific time."""
+        # Test for departures at a specific time
+        time_departures = get_departure_monitor(self.CENTRAL_STATION_ID, time="12:00")
+        assert time_departures is not None
+        assert isinstance(time_departures, list), "Response should be a list of departures"
     
     def test_multiple_filters(self):
         """Test departure retrieval with multiple filters."""
-        # Test for train departures with a specific operator
-        filtered_departures = get_next_departure(
+        # Test for train departures with date and time
+        filtered_departures = get_departure_monitor(
             self.CENTRAL_STATION_ID, 
             mot_type=1,
-            operator_id="Sydney Trains"
+            time="12:00"
         )
         assert filtered_departures is not None
-        assert hasattr(filtered_departures, 'version')
+        assert isinstance(filtered_departures, list), "Response should be a list of departures"
     
     def test_invalid_stop_id(self):
         """Test behavior with invalid stop ID."""
-        invalid_departures = get_next_departure("INVALID_ID")
-        # The API might return an empty response or None for invalid IDs
+        invalid_departures = get_departure_monitor("INVALID_ID")
+        # The API might return an empty list or None for invalid IDs
         if invalid_departures is not None:
-            # If a response is returned, it should have the expected structure
-            assert hasattr(invalid_departures, 'version')
+            # If a response is returned, it should be a list (possibly empty)
+            assert isinstance(invalid_departures, list), "Response should be a list"
     
     def test_response_time(self):
         """Test API response time."""
         start_time = time.time()
-        departures = get_next_departure(self.CENTRAL_STATION_ID)
+        departures = get_departure_monitor(self.CENTRAL_STATION_ID)
         elapsed = time.time() - start_time
         
         # API should respond within a reasonable time (5 seconds)
