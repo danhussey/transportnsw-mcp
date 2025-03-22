@@ -626,25 +626,6 @@ wheels = [
 ]
 
 [[package]]
-name = "swagger-client"
-version = "1.0.0"
-source = { directory = "out/python" }
-dependencies = [
-    { name = "certifi" },
-    { name = "python-dateutil" },
-    { name = "six" },
-    { name = "urllib3" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "certifi", specifier = ">=2017.4.17" },
-    { name = "python-dateutil", specifier = ">=2.1" },
-    { name = "six", specifier = ">=1.10" },
-    { name = "urllib3", specifier = ">=1.23" },
-]
-
-[[package]]
 name = "tomli"
 version = "2.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -703,7 +684,6 @@ dependencies = [
     { name = "requests" },
     { name = "setuptools" },
     { name = "six" },
-    { name = "swagger-client" },
     { name = "urllib3" },
 ]
 
@@ -724,7 +704,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.3" },
     { name = "setuptools", specifier = ">=21.0.0" },
     { name = "six", specifier = ">=1.10" },
-    { name = "swagger-client", directory = "out/python" },
     { name = "urllib3", specifier = ">=1.15.1" },
 ]
 

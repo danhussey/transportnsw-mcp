@@ -19,10 +19,8 @@ dependencies = [
     "setuptools>=21.0.0",
     "six>=1.10",
     "urllib3>=1.15.1",
-    "swagger-client",
     "mcp[cli]>=1.4.1",
     "requests>=2.32.3",
 ]
 
 [tool.uv.sources]
-swagger-client = { path = "out/python" }
