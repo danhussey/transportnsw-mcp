@@ -1,3 +1,8 @@
+import sys
+import os
+
+# Add the parent directory to path so we can import the api module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api import get_departure_monitor
 import json
 import pprint

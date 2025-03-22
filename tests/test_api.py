@@ -1,9 +1,12 @@
 import pytest
 import time
+import sys
+import os
 from datetime import datetime
-import swagger_client
-from swagger_client.rest import ApiException
-from api import find_transport_stops, get_transport_alerts, get_departure_monitor, api_instance, output_format, coord_output_format, incl_filter, api_version
+
+# Add the parent directory to path so we can import the api module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api import find_transport_stops, get_transport_alerts, get_departure_monitor, output_format, coord_output_format, incl_filter, api_version
 
 # Test coordinates (Central Station, Sydney)
 CENTRAL_STATION_COORD = '151.206290:-33.884080:EPSG:4326'
@@ -17,15 +20,15 @@ class TestCoordinateAPI:
         
         # Verify response structure
         assert bus_stops is not None
-        assert hasattr(bus_stops, 'locations')
-        assert len(bus_stops.locations) > 0
+        assert 'locations' in bus_stops
+        assert len(bus_stops['locations']) > 0
         
         # Verify location properties
-        for location in bus_stops.locations[:5]:
-            assert hasattr(location, 'name')
-            assert hasattr(location, 'id')
-            assert hasattr(location, 'type')
-            assert hasattr(location, 'coord')
+        for location in bus_stops['locations'][:5]:
+            assert 'name' in location
+            assert 'id' in location
+            assert 'type' in location
+            assert 'coord' in location
     
     def test_poi_retrieval(self):
         """Test finding points of interest around a location."""
@@ -33,20 +36,20 @@ class TestCoordinateAPI:
         
         # Verify response structure
         assert poi_locations is not None
-        assert hasattr(poi_locations, 'locations')
+        assert 'locations' in poi_locations
         
         # If POIs are found, verify their properties
-        if poi_locations.locations:
-            for location in poi_locations.locations[:5]:
-                assert hasattr(location, 'name')
-                assert hasattr(location, 'id')
-                assert hasattr(location, 'type')
-                assert hasattr(location, 'coord')
+        if poi_locations['locations']:
+            for location in poi_locations['locations'][:5]:
+                assert 'name' in location
+                assert 'id' in location
+                assert 'type' in location
+                assert 'coord' in location
                 
         # Verify location types are valid if POIs exist
-        if poi_locations.locations:
-            location = poi_locations.locations[0]
-            assert location.type == 'poi'  # POIs should have type 'poi'
+        if poi_locations['locations']:
+            location = poi_locations['locations'][0]
+            assert location['type'] == 'poi'  # POIs should have type 'poi'
     
     def test_response_time(self):
         """Test API response time."""
@@ -59,20 +62,12 @@ class TestCoordinateAPI:
         assert bus_stops is not None
     
     def test_invalid_stop_type(self):
-        """Test that GIS_POINT returns an error as expected."""
-        with pytest.raises(Exception) as excinfo:
-            api_instance.tfnsw_coord_request(
-                output_format=output_format,
-                coord=CENTRAL_STATION_COORD,
-                coord_output_format=coord_output_format,
-                incl_filter=incl_filter,
-                type_1='GIS_POINT',
-                radius_1=500,
-                version=api_version
-            )
-        
-        # Verify that an exception was raised
-        assert excinfo.value is not None
+        """Test with an invalid stop type."""
+        # With the new implementation, we should get None or an empty response rather than an exception
+        result = find_transport_stops(CENTRAL_STATION_COORD, stop_type='INVALID_TYPE', radius=500)
+        # Either the result is None or it doesn't have any valid locations
+        if result is not None:
+            assert 'locations' not in result or len(result['locations']) == 0
     
     def test_radius_parameter(self):
         """Test that different radius values affect the number of results."""
@@ -84,10 +79,10 @@ class TestCoordinateAPI:
         
         # Only compare if both requests were successful
         if small_radius_results and large_radius_results:
-            if hasattr(small_radius_results, 'locations') and hasattr(large_radius_results, 'locations'):
+            if 'locations' in small_radius_results and 'locations' in large_radius_results:
                 # The larger radius should generally return more results
                 # Note: This is not guaranteed but is likely in an urban area
-                assert len(small_radius_results.locations) <= len(large_radius_results.locations)
+                assert len(small_radius_results['locations']) <= len(large_radius_results['locations'])
     
     def test_different_location(self):
         """Test API with a different location."""
@@ -96,7 +91,7 @@ class TestCoordinateAPI:
         
         opera_house_stops = find_transport_stops(opera_house_coord, stop_type='BUS_POINT', radius=500)
         assert opera_house_stops is not None
-        assert hasattr(opera_house_stops, 'locations')
+        assert 'locations' in opera_house_stops
 
 
 class TestTransportAlerts:
@@ -106,23 +101,23 @@ class TestTransportAlerts:
         """Test basic alert retrieval with default parameters."""
         alerts = get_transport_alerts()
         assert alerts is not None
-        assert hasattr(alerts, 'version')
-        assert alerts.version == api_version
-        assert hasattr(alerts, 'timestamp')
-        assert hasattr(alerts, 'infos')
+        assert 'version' in alerts
+        assert alerts['version'] == api_version
+        assert 'timestamp' in alerts
+        assert 'infos' in alerts
     
     def test_filtered_alert_retrieval(self):
         """Test alert retrieval with mode of transport filter."""
         # Test for train alerts (mot_type=1)
         train_alerts = get_transport_alerts(mot_type=1)
         assert train_alerts is not None
-        assert hasattr(train_alerts, 'version')
-        assert train_alerts.version == api_version
+        assert 'version' in train_alerts
+        assert train_alerts['version'] == api_version
         
         # Test for bus alerts (mot_type=5)
         bus_alerts = get_transport_alerts(mot_type=5)
         assert bus_alerts is not None
-        assert hasattr(bus_alerts, 'version')
+        assert 'version' in bus_alerts
     
     def test_date_filtered_alert_retrieval(self):
         """Test alert retrieval with date filter."""
@@ -130,7 +125,7 @@ class TestTransportAlerts:
         future_date = '20-03-2025'
         date_alerts = get_transport_alerts(date=future_date)
         assert date_alerts is not None
-        assert hasattr(date_alerts, 'version')
+        assert 'version' in date_alerts
     
     def test_multiple_filters(self):
         """Test alert retrieval with multiple filters."""
@@ -138,16 +133,16 @@ class TestTransportAlerts:
         future_date = '20-03-2025'
         filtered_alerts = get_transport_alerts(date=future_date, mot_type=1)
         assert filtered_alerts is not None
-        assert hasattr(filtered_alerts, 'version')
+        assert 'version' in filtered_alerts
     
     def test_response_structure(self):
         """Test the structure of the API response."""
         alerts = get_transport_alerts()
-        assert hasattr(alerts, 'infos')
+        assert 'infos' in alerts
         
         # The structure might not have 'info' attribute if there are no alerts
         # Instead, check that the response has a valid structure overall
-        assert alerts.infos is not None
+        assert alerts['infos'] is not None
     
     def test_alerts_performance(self):
         """Test API response time."""

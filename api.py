@@ -1,21 +1,12 @@
 from __future__ import print_function
-import swagger_client
-from swagger_client.rest import ApiException
 from dotenv import load_dotenv
 import os
+import requests
 from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 API_KEY = os.getenv('OPEN_TRANSPORT_API_KEY')
-
-# Configure API key authorization
-configuration = swagger_client.Configuration()
-configuration.api_key['Authorization'] = API_KEY
-configuration.api_key_prefix['Authorization'] = 'apikey'
-
-# Create an instance of the API class
-api_instance = swagger_client.DefaultApi(swagger_client.ApiClient(configuration))
 
 # Define common parameters for API requests
 output_format = 'rapidJSON'  # Required for JSON output
@@ -42,19 +33,39 @@ def find_transport_stops(location_coord, stop_type='BUS_POINT', radius=100):
     Returns:
         API response with transport stops
     """
+    import requests
+    
+    # API endpoint
+    API_ENDPOINT = 'https://api.transport.nsw.gov.au/v1/tp/coord'
+    
+    # Set up the request parameters
+    params = {
+        'outputFormat': output_format,
+        'coord': location_coord,
+        'coordOutputFormat': coord_output_format,
+        'inclFilter': incl_filter,
+        'type_1': stop_type,
+        'radius_1': radius,
+        'version': api_version
+    }
+    
+    # Set up the headers with the API key
+    headers = {
+        'Authorization': f'apikey {API_KEY}'
+    }
+    
     try:
-        api_response = api_instance.tfnsw_coord_request(
-            output_format=output_format,
-            coord=location_coord,
-            coord_output_format=coord_output_format,
-            incl_filter=incl_filter,
-            type_1=stop_type,
-            radius_1=radius,
-            version=api_version
-        )
-        return api_response
-    except ApiException as e:
-        print(f"Exception when calling DefaultApi->tfnsw_coord_request: {e}\n")
+        # Make the request
+        response = requests.get(API_ENDPOINT, params=params, headers=headers)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Exception when calling Transport NSW API: {e}\n")
         return None
 
 @mcp.tool()
@@ -79,90 +90,56 @@ def get_transport_alerts(date=None, mot_type=None, stop_id=None, line_number=Non
     Returns:
         dict: API response containing alerts information
     """
+    import requests
+    
+    # API endpoint - the alerts are under /v1/tp/add_info (with an underscore)
+    API_ENDPOINT = 'https://api.transport.nsw.gov.au/v1/tp/add_info'
+    
     # Set default date to today if not provided
     if date is None:
         date = datetime.now().strftime('%d-%m-%Y')
     
-    # Required parameter
-    kwargs = {
-        'filter_date_valid': date,
+    # Set up the request parameters
+    params = {
+        'outputFormat': output_format,
+        'filterDateValid': date,
         'version': api_version
     }
     
     # Add optional filters if provided
     if mot_type is not None:
-        kwargs['filter_mot_type'] = mot_type
+        params['filterMotType'] = mot_type
     
     if stop_id is not None:
-        kwargs['itd_l_pxx_sel_stop'] = stop_id
+        params['itdLPxxSelStop'] = stop_id
     
     if line_number is not None:
-        kwargs['itd_l_pxx_sel_line'] = line_number
+        params['itdLPxxSelLine'] = line_number
     
     if operator_id is not None:
-        kwargs['itd_l_pxx_sel_operator'] = operator_id
+        params['itdLPxxSelOperator'] = operator_id
+        
+    # Ensure parameter names match what the API expects
+    # For the direct HTTP approach, some parameter names may be different than in Swagger
+    
+    # Set up the headers with the API key
+    headers = {
+        'Authorization': f'apikey {API_KEY}'
+    }
     
     try:
-        # Call the API
-        api_response = api_instance.tfnsw_addinfo_request(output_format, **kwargs)
-        return api_response
-    except ApiException as e:
+        # Make the request
+        response = requests.get(API_ENDPOINT, params=params, headers=headers)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            return None
+    except Exception as e:
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
-
-# # Call the API to get next departing i.e. timetable information for a specific stop
-# @mcp.tool()
-# def get_next_departure(stop_id, direction=None, date=None, mot_type=None, operator_id=None):
-#     """
-#     Get next departing i.e. timetable information for a specific stop from the Trip Planner API.
-    
-#     Args:
-#         stop_id (str): Stop ID or global stop ID
-#         direction (str, optional): Direction of travel (e.g., 'N' for north, 'S' for south)
-#         date (str, optional): Date in DD-MM-YYYY format. Defaults to today's date.
-#         mot_type (int, optional): Mode of transport type filter. Options:
-#             1: Train
-#             2: Metro
-#             4: Light Rail
-#             5: Bus
-#             7: Coach
-#             9: Ferry
-#             11: School Bus
-#         operator_id (str, optional): Operator ID to filter by.
-        
-#     Returns:
-#         dict: API response containing timetable information
-#     """
-#     # Set default date to today if not provided
-#     if date is None:
-#         date = datetime.now().strftime('%d-%m-%Y')
-    
-#     # Required parameters
-#     kwargs = {
-#         'itd_l_pxx_sel_stop': stop_id,
-#         'filter_date_valid': date,
-#         'version': api_version
-#     }
-    
-#     # Add optional filters if provided
-#     # Direction is not directly supported by the API, so we'll skip it for now
-#     # if direction is not None:
-#     #     kwargs['filter_direction'] = direction
-    
-#     if mot_type is not None:
-#         kwargs['filter_mot_type'] = mot_type
-    
-#     if operator_id is not None:
-#         kwargs['itd_l_pxx_sel_operator'] = operator_id
-    
-#     try:
-#         # Call the API
-#         api_response = api_instance.tfnsw_addinfo_request(output_format, **kwargs)
-#         return api_response
-#     except ApiException as e:
-#         print(f"Exception when calling Transport NSW API: {e}\n")
-#         return None
-
 
 # Call the API to get real-time departure information for a specific stop
 @mcp.tool()
