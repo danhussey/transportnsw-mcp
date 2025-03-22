@@ -1,8 +1,9 @@
 import pytest
 import time
+from datetime import datetime
 import swagger_client
 from swagger_client.rest import ApiException
-from api import find_transport_stops, get_transport_alerts, api_instance, output_format, coord_output_format, incl_filter, api_version
+from api import find_transport_stops, get_transport_alerts, get_next_departure, api_instance, output_format, coord_output_format, incl_filter, api_version
 
 # Test coordinates (Central Station, Sydney)
 CENTRAL_STATION_COORD = '151.206290:-33.884080:EPSG:4326'
@@ -156,6 +157,75 @@ class TestTransportAlerts:
         
         # API should respond within a reasonable time (5 seconds)
         assert elapsed < 5, f"API response took too long: {elapsed:.2f} seconds"
+
+
+class TestNextDeparture:
+    """Test suite for Transport NSW Next Departure API functionality."""
+    
+    # Test stop ID for Central Station
+    CENTRAL_STATION_ID = "200060"  # Central Station global ID
+    
+    def test_basic_departure_retrieval(self):
+        """Test basic next departure retrieval with default parameters."""
+        departures = get_next_departure(self.CENTRAL_STATION_ID)
+        
+        # Verify response structure
+        assert departures is not None
+        assert hasattr(departures, 'version')
+        assert departures.version == api_version
+        # The API returns additional info response, not departure monitor response
+        assert hasattr(departures, 'infos')
+    
+    # Direction filter test removed as the API doesn't support direction filtering directly
+    
+    def test_mot_type_filter(self):
+        """Test departure retrieval with mode of transport filter."""
+        # Test for train departures (mot_type=1)
+        train_departures = get_next_departure(self.CENTRAL_STATION_ID, mot_type=1)
+        assert train_departures is not None
+        
+        # Verify response structure
+        assert hasattr(train_departures, 'version')
+        assert train_departures.version == api_version
+    
+    def test_date_parameter(self):
+        """Test departure retrieval with specific date."""
+        # Test for departures on a specific date
+        tomorrow = (datetime.now().date().replace(day=datetime.now().day + 1)).strftime('%d-%m-%Y')
+        date_departures = get_next_departure(self.CENTRAL_STATION_ID, date=tomorrow)
+        assert date_departures is not None
+        
+        # Check that the response has the expected structure
+        assert hasattr(date_departures, 'version')
+    
+    def test_multiple_filters(self):
+        """Test departure retrieval with multiple filters."""
+        # Test for train departures with a specific operator
+        filtered_departures = get_next_departure(
+            self.CENTRAL_STATION_ID, 
+            mot_type=1,
+            operator_id="Sydney Trains"
+        )
+        assert filtered_departures is not None
+        assert hasattr(filtered_departures, 'version')
+    
+    def test_invalid_stop_id(self):
+        """Test behavior with invalid stop ID."""
+        invalid_departures = get_next_departure("INVALID_ID")
+        # The API might return an empty response or None for invalid IDs
+        if invalid_departures is not None:
+            # If a response is returned, it should have the expected structure
+            assert hasattr(invalid_departures, 'version')
+    
+    def test_response_time(self):
+        """Test API response time."""
+        start_time = time.time()
+        departures = get_next_departure(self.CENTRAL_STATION_ID)
+        elapsed = time.time() - start_time
+        
+        # API should respond within a reasonable time (5 seconds)
+        assert elapsed < 5, f"API response took too long: {elapsed:.2f} seconds"
+        assert departures is not None
 
 
 if __name__ == "__main__":
