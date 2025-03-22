@@ -90,7 +90,7 @@ def find_stop(query):
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
 
-def test_departure_monitor(stop_id):
+def run_departure_monitor_test(stop_id):
     """
     Test the departure monitor API with a specific stop ID.
     
@@ -166,27 +166,70 @@ def test_departure_monitor(stop_id):
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
 
-# Find stops first
-central_response = find_stop("Central Station")
-town_hall_response = find_stop("Town Hall Station")
-wynyard_response = find_stop("Wynyard Station")
-circular_quay_response = find_stop("Circular Quay")
+# Define test functions for pytest
+def test_find_central_station():
+    response = find_stop("Central Station")
+    assert response is not None
+    assert hasattr(response, 'locations')
+    assert len(response.locations) > 0
+    return response
 
-# Extract stop IDs from the responses
-stop_ids = []
-for response in [central_response, town_hall_response, wynyard_response, circular_quay_response]:
-    if response and hasattr(response, 'locations'):
-        for location in response.locations:
-            if hasattr(location, 'id'):
-                stop_ids.append(location.id)
-                
-            # Also check assigned stops
-            if hasattr(location, 'assigned_stops'):
-                for stop in location.assigned_stops:
-                    if hasattr(stop, 'id'):
-                        stop_ids.append(stop.id)
+def test_find_town_hall_station():
+    response = find_stop("Town Hall Station")
+    assert response is not None
+    assert hasattr(response, 'locations')
+    assert len(response.locations) > 0
+    return response
 
-# Test departure monitor with the found stop IDs
-print("\n\nTesting departure monitor with found stop IDs:")
-for stop_id in stop_ids[:5]:  # Test first 5 stop IDs
-    test_departure_monitor(stop_id)
+def test_find_wynyard_station():
+    response = find_stop("Wynyard Station")
+    assert response is not None
+    assert hasattr(response, 'locations')
+    assert len(response.locations) > 0
+    return response
+
+def test_find_circular_quay():
+    response = find_stop("Circular Quay")
+    assert response is not None
+    assert hasattr(response, 'locations')
+    assert len(response.locations) > 0
+    return response
+
+def test_departure_monitor_central():
+    # Use a hardcoded stop ID for Central Station
+    run_departure_monitor_test("200060")
+
+def test_departure_monitor_town_hall():
+    # Use a hardcoded stop ID for Town Hall Station
+    run_departure_monitor_test("200070")
+
+# This allows running the script directly for debugging
+if __name__ == "__main__":
+    # Find stops first
+    central_response = test_find_central_station()
+    town_hall_response = test_find_town_hall_station()
+    wynyard_response = test_find_wynyard_station()
+    circular_quay_response = test_find_circular_quay()
+    
+    # Extract stop IDs from the responses
+    stop_ids = []
+    for response in [central_response, town_hall_response, wynyard_response, circular_quay_response]:
+        if response and hasattr(response, 'locations'):
+            for location in response.locations:
+                if hasattr(location, 'id'):
+                    stop_ids.append(location.id)
+                    
+                # Also check assigned stops
+                if hasattr(location, 'assigned_stops'):
+                    for stop in location.assigned_stops:
+                        if hasattr(stop, 'id'):
+                            stop_ids.append(stop.id)
+    
+    # Test departure monitor with the found stop IDs
+    print("\n\nTesting departure monitor with found stop IDs:")
+    for stop_id in stop_ids[:5]:  # Test first 5 stop IDs
+        run_departure_monitor_test(stop_id)
+        
+    # Also run the fixed test cases
+    test_departure_monitor_central()
+    test_departure_monitor_town_hall()

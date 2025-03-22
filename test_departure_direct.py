@@ -75,7 +75,7 @@ def get_departure_monitor(stop_id, date=None, time=None):
         print(f"Response text: {response.text[:500]}...")  # Print first 500 chars
         return None
 
-def test_stop_id(stop_id, description=""):
+def run_direct_test(stop_id, description=""):
     """Test a specific stop ID and print the results."""
     print(f"\n{'='*80}")
     print(f"Testing stop ID: {stop_id}" + (f" ({description})" if description else ""))
@@ -128,11 +128,26 @@ def test_stop_id(stop_id, description=""):
     else:
         print("No result returned from the API.")
 
-# Test with the stop ID from the documentation
-test_stop_id("10101331", "Domestic Airport Station (from documentation)")
+# Define pytest test cases
+def test_domestic_airport_direct():
+    run_direct_test("10101331", "Domestic Airport Station (from documentation)")
 
-# Test with other stop IDs
-test_stop_id("200060", "Central Station global ID")
-test_stop_id("200070", "Town Hall Station")
-test_stop_id("200080", "Wynyard Station")
-test_stop_id("200010", "Circular Quay Station")
+def test_central_station_direct():
+    run_direct_test("200060", "Central Station global ID")
+    
+def test_town_hall_station_direct():
+    run_direct_test("200070", "Town Hall Station")
+    
+def test_wynyard_station_direct():
+    run_direct_test("200080", "Wynyard Station")
+    
+def test_circular_quay_station_direct():
+    run_direct_test("200010", "Circular Quay Station")
+
+# This allows running the script directly for debugging
+if __name__ == "__main__":
+    test_domestic_airport_direct()
+    test_central_station_direct()
+    test_town_hall_station_direct()
+    test_wynyard_station_direct()
+    test_circular_quay_station_direct()

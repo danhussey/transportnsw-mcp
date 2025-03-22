@@ -1,8 +1,8 @@
-from api import get_departure_monitor_direct
+from api import get_departure_monitor
 import pprint
 from datetime import datetime, timedelta
 
-def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
+def run_stop_id_direct_test(stop_id, description="", future_time=False, mot_type=None):
     """Test a specific stop ID and print the results."""
     print(f"\n{'='*80}")
     print(f"Testing stop ID: {stop_id}" + (f" ({description})" if description else ""))
@@ -16,7 +16,7 @@ def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
         print(f"Using future time: {time_param}")
     
     # Call the direct API function
-    result = get_departure_monitor_direct(stop_id, time=time_param, mot_type=mot_type)
+    result = get_departure_monitor(stop_id, time=time_param, mot_type=mot_type)
     
     if result:
         # Check for stop events
@@ -84,14 +84,22 @@ def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
     else:
         print("No result returned from the API.")
 
-# Test with the stop ID from the documentation
-test_stop_id("10101331", "Domestic Airport Station (from documentation)")
+# Define pytest test cases
+def test_domestic_airport():
+    run_stop_id_direct_test("10101331", "Domestic Airport Station (from documentation)")
 
-# Test with other stop IDs
-test_stop_id("200060", "Central Station global ID")
+def test_central_station():
+    run_stop_id_direct_test("200060", "Central Station global ID")
 
-# Test with a specific transport mode (1 = Train)
-test_stop_id("200060", "Central Station (Trains only)", mot_type=1)
+def test_central_station_trains_only():
+    run_stop_id_direct_test("200060", "Central Station (Trains only)", mot_type=1)
 
-# Test with a future time to see if we get more results
-test_stop_id("200060", "Central Station with future time", future_time=True)
+def test_central_station_future_time():
+    run_stop_id_direct_test("200060", "Central Station with future time", future_time=True)
+
+# This allows running the script directly for debugging
+if __name__ == "__main__":
+    test_domestic_airport()
+    test_central_station()
+    test_central_station_trains_only()
+    test_central_station_future_time()

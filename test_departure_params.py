@@ -23,115 +23,94 @@ output_format = 'rapidJSON'  # Required for JSON output
 coord_output_format = 'EPSG:4326'  # Standard coordinate format
 api_version = '10.2.1.42'  # API version
 
-def test_departure_params(stop_id, description=""):
+# Import our direct implementation
+from api import get_departure_monitor
+
+def run_departure_params_test(stop_id, description=""):
     """Test departure monitor with different parameter combinations."""
     print(f"\n{'='*80}")
     print(f"Testing departure monitor for stop ID: {stop_id}" + (f" ({description})" if description else ""))
     print(f"{'='*80}")
     
-    # Try with additional parameters
+    # Try with different parameters
     try:
-        # Try with itdDate and itdTime parameters
+        # Try with date and time parameters
         now = datetime.now()
-        itd_date = now.strftime('%Y%m%d')  # Format: YYYYMMDD
-        itd_time = now.strftime('%H%M')    # Format: HHMM
+        date_str = now.strftime('%d-%m-%Y')  # Format: DD-MM-YYYY for our function
+        time_str = now.strftime('%H:%M')    # Format: HH:MM for our function
         
-        print(f"Trying with itdDate={itd_date} and itdTime={itd_time}")
-        api_response = api_instance.tfnsw_dm_request(
-            output_format=output_format,
-            coord_output_format=coord_output_format,
-            type_dm='stop',
-            name_dm=stop_id,
-            itdDate=itd_date,
-            itdTime=itd_time,
-            version=api_version
-        )
+        print(f"Trying with date={date_str} and time={time_str}")
+        result = get_departure_monitor(stop_id, date=date_str, time=time_str)
         
-        if api_response and hasattr(api_response, 'stop_events') and api_response.stop_events:
-            print(f"Success! Found {len(api_response.stop_events)} departures.")
-            return api_response
+        if result and len(result) > 0:
+            print(f"Success! Found {len(result)} departures.")
+            
+            # Print first few results
+            for i, event in enumerate(result[:3]):
+                print(f"\nDeparture {i+1}:")
+                if 'transportation' in event and 'number' in event['transportation']:
+                    print(f"  Line: {event['transportation']['number']}")
+                if 'transportation' in event and 'destination' in event['transportation']:
+                    print(f"  Destination: {event['transportation']['destination']['name']}")
+                if 'departureTimePlanned' in event:
+                    print(f"  Planned: {event['departureTimePlanned']}")
+            
+            return result
         else:
-            print("No departure events found with itdDate and itdTime parameters.")
+            print("No departure events found with date and time parameters.")
         
-        # Try with mode parameter
-        print("Trying with mode=direct")
-        api_response = api_instance.tfnsw_dm_request(
-            output_format=output_format,
-            coord_output_format=coord_output_format,
-            type_dm='stop',
-            name_dm=stop_id,
-            mode='direct',
-            version=api_version
-        )
+        # Try with mot_type parameter (1 = Train)
+        print("\nTrying with mot_type=1 (Train)")
+        result = get_departure_monitor(stop_id, mot_type=1)
         
-        if api_response and hasattr(api_response, 'stop_events') and api_response.stop_events:
-            print(f"Success! Found {len(api_response.stop_events)} departures.")
-            return api_response
+        if result and len(result) > 0:
+            print(f"Success! Found {len(result)} train departures.")
+            return result
         else:
-            print("No departure events found with mode=direct parameter.")
+            print("No train departures found.")
         
-        # Try with ptOptionsActive parameter
-        print("Trying with ptOptionsActive=1")
-        api_response = api_instance.tfnsw_dm_request(
-            output_format=output_format,
-            coord_output_format=coord_output_format,
-            type_dm='stop',
-            name_dm=stop_id,
-            ptOptionsActive=1,
-            version=api_version
-        )
+        # Try with mot_type parameter (5 = Bus)
+        print("\nTrying with mot_type=5 (Bus)")
+        result = get_departure_monitor(stop_id, mot_type=5)
         
-        if api_response and hasattr(api_response, 'stop_events') and api_response.stop_events:
-            print(f"Success! Found {len(api_response.stop_events)} departures.")
-            return api_response
+        if result and len(result) > 0:
+            print(f"Success! Found {len(result)} bus departures.")
+            return result
         else:
-            print("No departure events found with ptOptionsActive=1 parameter.")
+            print("No bus departures found.")
         
-        # Try with departureMonitorMacro parameter
-        print("Trying with departureMonitorMacro=true")
-        api_response = api_instance.tfnsw_dm_request(
-            output_format=output_format,
-            coord_output_format=coord_output_format,
-            type_dm='stop',
-            name_dm=stop_id,
-            departureMonitorMacro=True,
-            version=api_version
-        )
+        # Try with max_results parameter
+        print("\nTrying with max_results=10")
+        result = get_departure_monitor(stop_id, max_results=10)
         
-        if api_response and hasattr(api_response, 'stop_events') and api_response.stop_events:
-            print(f"Success! Found {len(api_response.stop_events)} departures.")
-            return api_response
+        if result and len(result) > 0:
+            print(f"Success! Found {len(result)} departures with max_results=10.")
+            return result
         else:
-            print("No departure events found with departureMonitorMacro=true parameter.")
+            print("No departures found with max_results=10.")
         
-        # Try with a different type_dm
-        print("Trying with type_dm=any")
-        api_response = api_instance.tfnsw_dm_request(
-            output_format=output_format,
-            coord_output_format=coord_output_format,
-            type_dm='any',
-            name_dm=stop_id,
-            version=api_version
-        )
-        
-        if api_response and hasattr(api_response, 'stop_events') and api_response.stop_events:
-            print(f"Success! Found {len(api_response.stop_events)} departures.")
-            return api_response
-        else:
-            print("No departure events found with type_dm=any parameter.")
-        
-        # If all attempts fail, print the last response for debugging
-        print("\nFull response from last attempt:")
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(api_response.to_dict())
-        
-        return api_response
-    except ApiException as e:
+        # If all attempts fail, return None
+        return None
+    except Exception as e:
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
 
-# Test with known valid stop IDs
-test_departure_params("200060", "Central Station")
-test_departure_params("200070", "Town Hall Station")
-test_departure_params("200080", "Wynyard Station")
-test_departure_params("200010", "Circular Quay Station")
+# Define pytest test cases
+def test_central_station_params():
+    run_departure_params_test("200060", "Central Station")
+
+def test_town_hall_station_params():
+    run_departure_params_test("200070", "Town Hall Station")
+
+def test_wynyard_station_params():
+    run_departure_params_test("200080", "Wynyard Station")
+
+def test_circular_quay_station_params():
+    run_departure_params_test("200010", "Circular Quay Station")
+
+# This allows running the script directly for debugging
+if __name__ == "__main__":
+    test_central_station_params()
+    test_town_hall_station_params()
+    test_wynyard_station_params()
+    test_circular_quay_station_params()
