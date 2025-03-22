@@ -2,11 +2,11 @@
 
 [![Tests](https://github.com/danhussey/transportnsw-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/danhussey/transportnsw-mcp/actions/workflows/tests.yml)
 
-A Claude MCP for interacting with the Transport NSW API.
+A Claude MCP for interacting with the Transport NSW API using direct HTTP requests.
 
 ## About
 
-This project implements a Model Context Protocol (MCP) service for parts of Transport NSW's API.
+This project implements a Model Context Protocol (MCP) service for Transport NSW's API.
 
 ## Setup
 
@@ -24,12 +24,13 @@ This project implements a Model Context Protocol (MCP) service for parts of Tran
    ```bash
    uv run mcp dev api.py
    ```
-And visit the server at http://localhost:5173 (port might be different).
+   And visit the server at http://localhost:5173 (port might be different).
 
 ## Features
 
-- **Coordinate API**: Find transport stops and points of interest around a location
+- **Stop Finder API**: Find transport stops by name or coordinates
 - **Alerts API**: Get information about transport alerts and disruptions
+- **Departure Monitor API**: Get real-time departure information for transport stops
 - **MCP Implementation**: Structured as a Model Context Protocol service
 
 ## Usage Examples
@@ -41,14 +42,12 @@ MCP Examples coming soon. Standard Python examples below:
 ```python
 from api import find_transport_stops
 
-# Central Station coordinates
+# Search by name
+stops = find_transport_stops(stop_name="Central Station")
+
+# Search by coordinates (Central Station area)
 central_station = '151.206290:-33.884080:EPSG:4326'
-
-# Find bus stops within 500m of Central Station
-bus_stops = find_transport_stops(central_station, stop_type='BUS_POINT', radius=500)
-
-# Find points of interest
-pois = find_transport_stops(central_station, stop_type='POI_POINT', radius=500)
+stops = find_transport_stops(coord=central_station, radius=500)
 ```
 
 ### Get Transport Alerts
@@ -60,26 +59,56 @@ from api import get_transport_alerts
 alerts = get_transport_alerts()
 
 # Get alerts for a specific date
-date_alerts = get_transport_alerts(date='01-01-2025')
+date_alerts = get_transport_alerts(date='22-03-2025')
 
 # Get train alerts only (mot_type=1)
 train_alerts = get_transport_alerts(mot_type=1)
 ```
 
-## Demo Scripts
+### Monitor Real-time Departures
 
-- `coord_demo.py`: Demonstrates finding transport stops around Central Station
-- `demo.py`: Shows how to use the Transport NSW Coordinate API
-- `main.py`: Demonstrates the Transport NSW Alerts API
+```python
+from api import get_departure_monitor
+
+# Get departures from Central Station
+departures = get_departure_monitor("200060")  # Central Station ID
+
+# Get departures for a specific time
+from datetime import datetime
+time_departures = get_departure_monitor("200060", time="15:30")
+
+# Get only train departures
+train_departures = get_departure_monitor("200060", mot_type=1)  # 1 = Train
+```
+
+## Demo Script
+
+The project includes a comprehensive demo script that showcases all API functionality:
+
+```bash
+# Run the full demo
+python demo.py
+
+# Run specific sections
+python demo.py --stops       # Stop finder demo
+python demo.py --alerts      # Transport alerts demo
+python demo.py --departures  # Departure monitoring demo
+```
 
 ## Testing
 
 ### Local Testing
 
-Run tests locally with pytest:
+Run the complete test suite with pytest:
 
 ```bash
-uv run pytest test_api.py -v
+uv run pytest
+```
+
+Run with coverage reporting:
+
+```bash
+uv run pytest --cov=api
 ```
 
 ### Continuous Integration
@@ -105,4 +134,3 @@ This project uses uv, a modern Python package manager written in Rust. Dependenc
 
 - `pyproject.toml`: Defines project dependencies
 - `uv.lock`: Locks dependency versions for reproducible environments
-- Local dependencies (like swagger-client) are referenced in the [tool.uv.sources] section
