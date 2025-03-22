@@ -166,7 +166,7 @@ def get_next_departure(stop_id, direction=None, date=None, mot_type=None, operat
 
 # Call the API to get real-time departure information for a specific stop
 @mcp.tool()
-def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_results=40):
+def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_results=3):
     """
     Get real-time departure monitor information for a specific stop from the Trip Planner API.
     This function uses direct HTTP requests to the Transport NSW API.
@@ -183,7 +183,7 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
             7: Coach
             9: Ferry
             11: School Bus
-        max_results (int, optional): Maximum number of results to return. Default is 40.
+        max_results (int, optional): Maximum number of results to return. Default is 3.
         
     Returns:
         dict: API response containing departure information
@@ -242,6 +242,12 @@ def get_departure_monitor(stop_id, date=None, time=None, mot_type=None, max_resu
         if response.status_code == 200:
             # Parse the JSON response
             data = response.json()
+            
+            # Limit the number of stop events to max_results if specified
+            if 'stopEvents' in data and len(data['stopEvents']) > max_results:
+                data['stopEvents'] = data['stopEvents'][:max_results]
+                print(f"Limited results to {max_results} departures")
+            
             return data
         else:
             print(f"Request failed with status code: {response.status_code}")
