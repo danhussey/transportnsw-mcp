@@ -2,7 +2,7 @@ from api import get_departure_monitor
 import pprint
 from datetime import datetime, timedelta
 
-def test_stop_id(stop_id, description="", future_time=False):
+def test_stop_id(stop_id, description="", future_time=False, mot_type=None):
     """Test a specific stop ID and print the results."""
     print(f"\n{'='*80}")
     print(f"Testing stop ID: {stop_id}" + (f" ({description})" if description else ""))
@@ -15,61 +15,72 @@ def test_stop_id(stop_id, description="", future_time=False):
         time_param = future.strftime('%H:%M')
         print(f"Using future time: {time_param}")
     
-    result = get_departure_monitor(stop_id, time=time_param)
+    # Call the API function
+    result = get_departure_monitor(stop_id, time=time_param, mot_type=mot_type)
     
     if result:
-        print(f"API Version: {result.version}")
-        
         # Check for stop events
-        if hasattr(result, 'stop_events') and result.stop_events:
-            print(f"\nFound {len(result.stop_events)} departures:")
-            for i, event in enumerate(result.stop_events[:5]):  # Show first 5 events
+        if 'stopEvents' in result and result['stopEvents']:
+            print(f"\nFound {len(result['stopEvents'])} departures:")
+            for i, event in enumerate(result['stopEvents'][:5]):  # Show first 5 events
                 print(f"\nDeparture {i+1}:")
                 
                 # Display transportation info
-                if hasattr(event, 'transportation'):
-                    trans = event.transportation
-                    if hasattr(trans, 'number'):
-                        print(f"  Line: {trans.number}")
-                    if hasattr(trans, 'disassembled_name'):
-                        print(f"  Name: {trans.disassembled_name}")
-                    elif hasattr(trans, 'name'):
-                        print(f"  Name: {trans.name}")
-                    if hasattr(trans, 'destination') and hasattr(trans.destination, 'name'):
-                        print(f"  Destination: {trans.destination.name}")
+                if 'transportation' in event:
+                    trans = event['transportation']
+                    if 'number' in trans:
+                        print(f"  Line: {trans['number']}")
+                    if 'disassembledName' in trans:
+                        print(f"  Name: {trans['disassembledName']}")
+                    elif 'name' in trans:
+                        print(f"  Name: {trans['name']}")
+                    if 'destination' in trans and 'name' in trans['destination']:
+                        print(f"  Destination: {trans['destination']['name']}")
                 
                 # Display time info
-                if hasattr(event, 'departure_time_planned'):
-                    print(f"  Planned Departure: {event.departure_time_planned}")
-                if hasattr(event, 'departure_time_estimated'):
-                    print(f"  Estimated Departure: {event.departure_time_estimated}")
+                if 'departureTimePlanned' in event:
+                    print(f"  Planned Departure: {event['departureTimePlanned']}")
+                if 'departureTimeEstimated' in event:
+                    print(f"  Estimated Departure: {event['departureTimeEstimated']}")
                 
                 # Display location info
-                if hasattr(event, 'location'):
-                    loc = event.location
-                    if hasattr(loc, 'name'):
-                        print(f"  Location: {loc.name}")
-                    if hasattr(loc, 'disassembled_name'):
-                        print(f"  Platform/Stop: {loc.disassembled_name}")
+                if 'location' in event:
+                    loc = event['location']
+                    if 'name' in loc:
+                        print(f"  Location: {loc['name']}")
+                    if 'disassembledName' in loc:
+                        print(f"  Platform/Stop: {loc['disassembledName']}")
         else:
             print("\nNo departure events found.")
         
         # Check for locations
-        if hasattr(result, 'locations') and result.locations:
-            print(f"\nFound {len(result.locations)} locations:")
-            for i, location in enumerate(result.locations[:3]):  # Show first 3 locations
+        if 'locations' in result and result['locations']:
+            print(f"\nFound {len(result['locations'])} locations:")
+            for i, location in enumerate(result['locations'][:3]):  # Show first 3 locations
                 print(f"\nLocation {i+1}:")
-                if hasattr(location, 'name'):
-                    print(f"  Name: {location.name}")
-                if hasattr(location, 'id'):
-                    print(f"  ID: {location.id}")
-                if hasattr(location, 'type'):
-                    print(f"  Type: {location.type}")
+                if 'name' in location:
+                    print(f"  Name: {location['name']}")
+                if 'id' in location:
+                    print(f"  ID: {location['id']}")
+                if 'type' in location:
+                    print(f"  Type: {location['type']}")
+                
+                # Check for assigned stops
+                if 'assignedStops' in location and location['assignedStops']:
+                    print(f"  Assigned Stops: {len(location['assignedStops'])}")
+                    for j, stop in enumerate(location['assignedStops']):
+                        print(f"    Stop {j+1}:")
+                        if 'name' in stop:
+                            print(f"      Name: {stop['name']}")
+                        if 'id' in stop:
+                            print(f"      ID: {stop['id']}")
+                        if 'productClasses' in stop:
+                            print(f"      Product Classes: {stop['productClasses']}")
         
-        # Print full response as dictionary for debugging
-        print("\nFull response as dictionary:")
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(result.to_dict())
+        # Print full response as dictionary for debugging (truncated for readability)
+        print("\nResponse summary:")
+        pp = pprint.PrettyPrinter(indent=2, depth=2)
+        pp.pprint(result)
     else:
         print("No result returned from the API.")
 
@@ -79,6 +90,11 @@ test_stop_id("10101331", "Domestic Airport Station (from documentation)")
 
 # Try with the stop IDs we found earlier
 test_stop_id("200060", "Central Station global ID")
+
+# Try with a specific transport mode (1 = Train)
+test_stop_id("200060", "Central Station (Trains only)", mot_type=1)
+
+# Try with other stations
 test_stop_id("200070", "Town Hall Station")
 test_stop_id("200080", "Wynyard Station")
 test_stop_id("200010", "Circular Quay Station")
