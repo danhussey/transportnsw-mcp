@@ -110,58 +110,58 @@ def get_transport_alerts(date=None, mot_type=None, stop_id=None, line_number=Non
         print(f"Exception when calling Transport NSW API: {e}\n")
         return None
 
-# Call the API to get next departing i.e. timetable information for a specific stop
-@mcp.tool()
-def get_next_departure(stop_id, direction=None, date=None, mot_type=None, operator_id=None):
-    """
-    Get next departing i.e. timetable information for a specific stop from the Trip Planner API.
+# # Call the API to get next departing i.e. timetable information for a specific stop
+# @mcp.tool()
+# def get_next_departure(stop_id, direction=None, date=None, mot_type=None, operator_id=None):
+#     """
+#     Get next departing i.e. timetable information for a specific stop from the Trip Planner API.
     
-    Args:
-        stop_id (str): Stop ID or global stop ID
-        direction (str, optional): Direction of travel (e.g., 'N' for north, 'S' for south)
-        date (str, optional): Date in DD-MM-YYYY format. Defaults to today's date.
-        mot_type (int, optional): Mode of transport type filter. Options:
-            1: Train
-            2: Metro
-            4: Light Rail
-            5: Bus
-            7: Coach
-            9: Ferry
-            11: School Bus
-        operator_id (str, optional): Operator ID to filter by.
+#     Args:
+#         stop_id (str): Stop ID or global stop ID
+#         direction (str, optional): Direction of travel (e.g., 'N' for north, 'S' for south)
+#         date (str, optional): Date in DD-MM-YYYY format. Defaults to today's date.
+#         mot_type (int, optional): Mode of transport type filter. Options:
+#             1: Train
+#             2: Metro
+#             4: Light Rail
+#             5: Bus
+#             7: Coach
+#             9: Ferry
+#             11: School Bus
+#         operator_id (str, optional): Operator ID to filter by.
         
-    Returns:
-        dict: API response containing timetable information
-    """
-    # Set default date to today if not provided
-    if date is None:
-        date = datetime.now().strftime('%d-%m-%Y')
+#     Returns:
+#         dict: API response containing timetable information
+#     """
+#     # Set default date to today if not provided
+#     if date is None:
+#         date = datetime.now().strftime('%d-%m-%Y')
     
-    # Required parameters
-    kwargs = {
-        'itd_l_pxx_sel_stop': stop_id,
-        'filter_date_valid': date,
-        'version': api_version
-    }
+#     # Required parameters
+#     kwargs = {
+#         'itd_l_pxx_sel_stop': stop_id,
+#         'filter_date_valid': date,
+#         'version': api_version
+#     }
     
-    # Add optional filters if provided
-    # Direction is not directly supported by the API, so we'll skip it for now
-    # if direction is not None:
-    #     kwargs['filter_direction'] = direction
+#     # Add optional filters if provided
+#     # Direction is not directly supported by the API, so we'll skip it for now
+#     # if direction is not None:
+#     #     kwargs['filter_direction'] = direction
     
-    if mot_type is not None:
-        kwargs['filter_mot_type'] = mot_type
+#     if mot_type is not None:
+#         kwargs['filter_mot_type'] = mot_type
     
-    if operator_id is not None:
-        kwargs['itd_l_pxx_sel_operator'] = operator_id
+#     if operator_id is not None:
+#         kwargs['itd_l_pxx_sel_operator'] = operator_id
     
-    try:
-        # Call the API
-        api_response = api_instance.tfnsw_addinfo_request(output_format, **kwargs)
-        return api_response
-    except ApiException as e:
-        print(f"Exception when calling Transport NSW API: {e}\n")
-        return None
+#     try:
+#         # Call the API
+#         api_response = api_instance.tfnsw_addinfo_request(output_format, **kwargs)
+#         return api_response
+#     except ApiException as e:
+#         print(f"Exception when calling Transport NSW API: {e}\n")
+#         return None
 
 
 # Call the API to get real-time departure information for a specific stop
