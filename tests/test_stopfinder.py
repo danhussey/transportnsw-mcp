@@ -172,28 +172,28 @@ def test_find_central_station():
     assert response is not None
     assert hasattr(response, 'locations')
     assert len(response.locations) > 0
-    return response
+    # No return value for pytest functions
 
 def test_find_town_hall_station():
     response = find_stop("Town Hall Station")
     assert response is not None
     assert hasattr(response, 'locations')
     assert len(response.locations) > 0
-    return response
+    # No return value for pytest functions
 
 def test_find_wynyard_station():
     response = find_stop("Wynyard Station")
     assert response is not None
     assert hasattr(response, 'locations')
     assert len(response.locations) > 0
-    return response
+    # No return value for pytest functions
 
 def test_find_circular_quay():
     response = find_stop("Circular Quay")
     assert response is not None
     assert hasattr(response, 'locations')
     assert len(response.locations) > 0
-    return response
+    # No return value for pytest functions
 
 def test_departure_monitor_central():
     # Use a hardcoded stop ID for Central Station
