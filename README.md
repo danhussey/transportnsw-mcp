@@ -133,4 +133,7 @@ This project follows the Model Context Protocol specification, allowing AI model
 This project uses uv, a modern Python package manager written in Rust. Dependencies are managed through:
 
 - `pyproject.toml`: Defines project dependencies
-- `uv.lock`: Locks dependency versions for reproducible environments
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
